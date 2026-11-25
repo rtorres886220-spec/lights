@@ -1,9 +1,9 @@
-const http=require('http'),fs=require('fs'),path=require('path');const {chromium}=require('playwright');
-const D='/home/user/lynar-landing', GF=__dirname+'/gf';
+const http=require('http'),fs=require('fs'),path=require('path');const {chromium}=require(process.env.PW||'playwright');
+const D=process.env.PAGE_DIR||require('path').resolve(__dirname,'..'), GF=__dirname+'/gf';
 const srv=http.createServer((q,s)=>{const p=path.join(D,q.url.split('?')[0]==='/'?'/index.html':q.url.split('?')[0]);fs.readFile(p,(e,d)=>{if(e){s.writeHead(404);return s.end()}s.writeHead(200,{'Content-Type':'text/html'});s.end(d)})}).listen(8767);
 (async()=>{const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const pg=await b.newPage({viewport:{width:960,height:600}});
-await pg.route('https://fonts.**',r=>r.abort());
+if(fs.existsSync(GF)) await pg.route('https://fonts.**',r=>r.abort());
 const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 await pg.goto('http://localhost:8767/');await pg.waitForFunction(()=>document.documentElement.dataset.ready==='1',null,{timeout:240000});
 const q=()=>pg.evaluate(()=>{const p=window.__app.product.quaternion;return [p.x,p.y,p.z,p.w].map(v=>+v.toFixed(3))});

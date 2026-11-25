@@ -1,0 +1,110 @@
+[
+{
+"name": "turn_0",
+"target": "",
+"dir": "0.000,0.45,1.000",
+"dist": 3.4
+},
+{
+"name": "turn_1",
+"target": "",
+"dir": "0.707,0.45,0.707",
+"dist": 3.4
+},
+{
+"name": "turn_2",
+"target": "",
+"dir": "1.000,0.45,0.000",
+"dist": 3.4
+},
+{
+"name": "turn_3",
+"target": "",
+"dir": "0.707,0.45,-0.707",
+"dist": 3.4
+},
+{
+"name": "turn_4",
+"target": "",
+"dir": "0.000,0.45,-1.000",
+"dist": 3.4
+},
+{
+"name": "turn_5",
+"target": "",
+"dir": "-0.707,0.45,-0.707",
+"dist": 3.4
+},
+{
+"name": "turn_6",
+"target": "",
+"dir": "-1.000,0.45,-0.000",
+"dist": 3.4
+},
+{
+"name": "turn_7",
+"target": "",
+"dir": "-0.707,0.45,0.707",
+"dist": 3.4
+},
+{
+"name": "close_atos",
+"target": "Sestav_Atos_LYN001",
+"dir": "0.3,-0.4,1",
+"dist": 0.3
+},
+{
+"name": "close_atos_mouth",
+"target": "Atos_LYN002",
+"dir": "-0.4,-1,0.6",
+"dist": 0.14
+},
+{
+"name": "close_eye",
+"target": "EYE_60_C_double_angle001",
+"dir": "0.8,-0.2,0.6",
+"dist": 0.38
+},
+{
+"name": "close_eye_mouth",
+"target": "EYE_60_C_double_angle001",
+"dir": "0.1,-1,0.15",
+"dist": 0.28
+},
+{
+"name": "close_biba",
+"target": "Sestav_ROUND_round_2_002",
+"dir": "-0.5,-0.2,0.85",
+"dist": 0.2
+},
+{
+"name": "close_rylo",
+"target": "Intra-lighting_LYNAR_RYLO-LightLineKalis001",
+"dir": "-0.6,-0.7,0.4",
+"dist": 0.3
+},
+{
+"name": "close_kalis",
+"target": "Intra-lighting_LYNAR_KALIS-36_LinerMultispot_Rylo001",
+"dir": "0.6,-0.7,0.4",
+"dist": 0.3
+},
+{
+"name": "close_corner",
+"target": "Intra-lighting_LYNAR-CS-SDI_Corner-element90_1",
+"dir": "-0.5,-0.3,0.8",
+"dist": 0.25
+},
+{
+"name": "close_end",
+"target": "Intra-lighting_LYNAR-CS-SDI_End_cover002",
+"dir": "0.4,-0.2,1",
+"dist": 0.16
+},
+{
+"name": "close_indirect",
+"target": "IntraLighting_Indirect_ilumination001",
+"dir": "-0.4,0.8,0.4",
+"dist": 0.3
+}
+]

@@ -1,12 +1,12 @@
-const http=require('http'),fs=require('fs'),path=require('path');const {chromium}=require('playwright');
-const D='/home/user/lynar-landing', GF=__dirname+'/gf', OUT=__dirname+'/aud';fs.mkdirSync(OUT,{recursive:true});
+const http=require('http'),fs=require('fs'),path=require('path');const {chromium}=require(process.env.PW||'playwright');
+const D=process.env.PAGE_DIR||require('path').resolve(__dirname,'..'), GF=__dirname+'/gf', OUT=__dirname+'/aud';fs.mkdirSync(OUT,{recursive:true});
 const srv=http.createServer((q,s)=>{const p=path.join(D,decodeURIComponent(q.url.split('?')[0]==='/'?'/index.html':q.url.split('?')[0]));fs.readFile(p,(e,d)=>{if(e){s.writeHead(404);return s.end()}s.writeHead(200,{'Content-Type':p.endsWith('.html')?'text/html':'application/octet-stream'});s.end(d)})}).listen(8766);
 const [,,mode='desktop',which='all']=process.argv;
 (async()=>{const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
 const vp=mode==='mobile'?{viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true}:{viewport:{width:1440,height:900},deviceScaleFactor:1};
 const ctx=await b.newContext(vp);const pg=await ctx.newPage();
-await pg.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:fs.readFileSync(GF+'/fonts.css')}));
-await pg.route('https://fonts.gstatic.com/**',r=>{const f=GF+'/'+r.request().url().replace('https://fonts.gstatic.com/','').replace(/\//g,'_');r.fulfill({status:200,contentType:'font/woff2',body:fs.readFileSync(f)})});
+if(fs.existsSync(GF)) await pg.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:fs.readFileSync(GF+'/fonts.css')}));
+if(fs.existsSync(GF)) await pg.route('https://fonts.gstatic.com/**',r=>{const f=GF+'/'+r.request().url().replace('https://fonts.gstatic.com/','').replace(/\//g,'_');r.fulfill({status:200,contentType:'font/woff2',body:fs.readFileSync(f)})});
 const errs=[];pg.on('console',m=>{if(m.type()==='error'||m.type()==='warning')errs.push(m.type()+': '+m.text())});pg.on('pageerror',e=>errs.push('pageerror: '+e.message));
 pg.on('requestfailed',r=>errs.push('reqfail: '+r.url().slice(0,80)));
 await pg.goto('http://localhost:8766/');

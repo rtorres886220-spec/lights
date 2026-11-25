@@ -1,5 +1,5 @@
-const http=require('http'),fs=require('fs'),path=require('path'),zlib=require('zlib');const {chromium}=require('playwright');
-const D='/home/user/lynar-landing', GF=__dirname+'/gf';
+const http=require('http'),fs=require('fs'),path=require('path'),zlib=require('zlib');const {chromium}=require(process.env.PW||'playwright');
+const D=process.env.PAGE_DIR||require('path').resolve(__dirname,'..'), GF=__dirname+'/gf';
 const srv=http.createServer((q,s)=>{const u=q.url.split('?')[0];const p=path.join(D,u==='/'?'/index.html':u);fs.readFile(p,(e,d)=>{if(e){s.writeHead(404);return s.end()}s.writeHead(200,{'Content-Type':'text/html'});s.end(d)})}).listen(8768);
 const st=a=>{a=[...a].sort((x,y)=>x-y);const q=p=>a[Math.min(a.length-1,Math.floor(p*a.length))];return {n:a.length,p50:+q(.5).toFixed(2),p95:+q(.95).toFixed(2),max:+a[a.length-1].toFixed(2)}};
 (async()=>{
@@ -8,8 +8,8 @@ console.log('WEIGHT raw',html.length,'gzip',zlib.gzipSync(html,{level:9}).length
 const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--enable-precise-memory-info']});
 for(const throttle of [1,4]){
 const ctx=await b.newContext({viewport:{width:1440,height:900}});const pg=await ctx.newPage();
-await pg.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:fs.readFileSync(GF+'/fonts.css')}));
-await pg.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:fs.readFileSync(GF+'/'+r.request().url().replace('https://fonts.gstatic.com/','').replace(/\//g,'_'))}));
+if(fs.existsSync(GF)) await pg.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:fs.readFileSync(GF+'/fonts.css')}));
+if(fs.existsSync(GF)) await pg.route('https://fonts.gstatic.com/**',r=>r.fulfill({status:200,contentType:'font/woff2',body:fs.readFileSync(GF+'/'+r.request().url().replace('https://fonts.gstatic.com/','').replace(/\//g,'_'))}));
 await pg.addInitScript(()=>{window.__lt=[];new PerformanceObserver(l=>l.getEntries().forEach(e=>window.__lt.push([e.startTime,e.duration]))).observe({type:'longtask',buffered:true});
  window.__cls=0;new PerformanceObserver(l=>l.getEntries().forEach(e=>{if(!e.hadRecentInput)window.__cls+=e.value})).observe({type:'layout-shift',buffered:true});
  window.__ri=[];let last=0;const f=t=>{if(last)window.__ri.push(t-last);last=t;if(window.__ri.length>4000)window.__ri.shift();requestAnimationFrame(f)};requestAnimationFrame(f);});
