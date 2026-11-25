@@ -1,0 +1,8 @@
+start [ 0, 0, 0, 1 ] +000.0° +000.0° +000.0°
+after horizontal [ 0.221, 0.919, -0.278, 0.17 ] +035.9° +166.5° +022.6°
+after vertical+diag [ 0.845, 0.476, -0.143, -0.196 ] −011.3° −154.1° +118.6°
+after key [ 0.846, 0.506, -0.093, -0.142 ]
+pressed false biba spot 0.00
+lamp css #ffd2af
+ch 1 q after chapter [ 0, 0, -0, -1 ]
+perf {"ms":250,"DPR":1} errors none

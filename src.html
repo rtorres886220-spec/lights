@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LYNAR — L Configuration</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%230d0c0b%22/%3E%3Cpath d=%22M9 7v18h14%22 fill=%22none%22 stroke=%22%23ffc58f%22 stroke-width=%223%22/%3E%3C/svg%3E">
+<meta name="description" content="LYNAR SDI profile in an L configuration with six luminaire families. Interactive 3D, built from the manufacturer CAD model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
+  "gsap/ScrollTrigger":"https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js",
+  "lenis":"https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.mjs"
+}}
+</script>
+<style>
+:root{
+  --bg:#0d0c0b; --paper:#efe7da; --mute:#90877b; --faint:rgba(239,231,218,.16);
+  --lamp:#ffc58f;
+  --gut:clamp(18px,3.4vw,56px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--paper);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--lamp);color:var(--bg)}
+#gl{pointer-events:auto;z-index:0;position:fixed;inset:0;width:100%;height:100lvh;display:block;touch-action:pan-y;cursor:grab;outline:none}
+body.grab #gl{cursor:grabbing}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+
+/* type system */
+.disp{font-family:'Bricolage Grotesque',serif;font-optical-sizing:auto;font-variation-settings:'wdth' 75;font-weight:300;letter-spacing:-.045em;line-height:.84}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;font-weight:400;letter-spacing:.17em;text-transform:uppercase;font-variant-numeric:tabular-nums;line-height:1.5}
+.num{font-variant-numeric:tabular-nums lining-nums}
+.lamp{color:var(--lamp)}
+.mute{color:var(--mute)}
+
+/* chrome */
+header{position:fixed;z-index:5;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:baseline;padding:calc(var(--gut)*.7) var(--gut);pointer-events:none;mix-blend-mode:normal}
+.brand{display:flex;align-items:baseline;gap:14px}
+.brand b{font-family:'Bricolage Grotesque',serif;font-variation-settings:'wdth' 100;font-weight:700;font-size:17px;letter-spacing:.32em;line-height:1}
+.ctl{display:flex;gap:26px;align-items:baseline;pointer-events:auto}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;letter-spacing:inherit;text-transform:inherit}
+.tog{display:inline-flex;gap:8px;align-items:baseline}
+.tog i{font-style:normal;color:var(--mute);transition:color .4s}
+.tog i.on{color:var(--lamp)}
+button:focus-visible,a:focus-visible{outline:1px solid var(--lamp);outline-offset:6px}
+
+/* index rail */
+.rail{position:fixed;z-index:5;right:var(--gut);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:auto}
+.rail button{display:flex;align-items:center;gap:10px;color:var(--mute);padding:2px 0;transition:color .5s}
+.rail button::after{content:"";display:block;width:14px;height:1px;background:currentColor;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.rail button.on{color:var(--paper)}
+.rail button.on::after{width:34px;background:var(--lamp)}
+
+/* sections */
+main{position:relative;z-index:3;pointer-events:none}
+section{position:relative;min-height:100svh;padding:var(--gut)}
+.k{display:block;margin-bottom:22px}
+.k .lamp{margin-right:14px}
+h1.disp{font-size:clamp(64px,12.4vw,232px)}
+h2.disp{font-size:clamp(52px,7.4vw,138px)}
+.ln{display:block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em}
+.ln>span{display:block;will-change:transform}
+p.body{max-width:34ch;font-size:13px;line-height:1.62;letter-spacing:.01em;color:#cfc6b8}
+
+#hero .h{position:absolute;left:var(--gut);bottom:calc(var(--gut)*1.05)}
+#hero .side{position:absolute;right:calc(var(--gut) + 74px);bottom:calc(var(--gut)*1.2);display:grid;gap:26px;justify-items:end;text-align:right}
+#hero .side p.body{text-align:right}
+.readout{display:grid;grid-template-columns:auto auto;gap:2px 18px;justify-content:end}
+.readout span:nth-child(odd){color:var(--mute)}
+.hint{display:flex;gap:12px;align-items:center}
+.hint svg{width:30px;height:30px}
+
+.blk{position:absolute;left:var(--gut);top:50%;transform:translateY(-50%);max-width:min(560px,44vw)}
+.blk h2{margin-bottom:30px}
+.blk .meta{display:flex;gap:34px;margin-top:30px}
+.blk .meta div{display:grid;gap:6px}
+.blk .meta strong{font-family:'Bricolage Grotesque',serif;font-variation-settings:'wdth' 75;font-weight:400;font-size:44px;letter-spacing:-.03em;line-height:.9;font-variant-numeric:tabular-nums}
+.blk .meta strong small{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.12em;margin-left:6px;color:var(--mute)}
+
+.mods{min-height:auto}
+.mod{min-height:92svh}
+
+#kelvin .blk{max-width:min(620px,48vw)}
+.kv{display:flex;gap:0;margin-top:34px;border-top:1px solid var(--faint)}
+.kv button{pointer-events:auto;flex:1;text-align:left;padding:16px 18px 0 0;font-family:'Bricolage Grotesque',serif;font-variation-settings:'wdth' 75;font-weight:300;font-size:46px;letter-spacing:-.03em;line-height:1;color:var(--mute);position:relative;transition:color .5s;font-variant-numeric:tabular-nums}
+.kv button small{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.14em;margin-left:4px}
+.kv button::before{content:"";position:absolute;left:0;top:-1px;height:1px;width:0;background:var(--lamp);transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.kv button.on{color:var(--paper)}
+.kv button.on::before{width:calc(100% - 18px)}
+.note{margin-top:22px}
+
+#specs{min-height:120svh;display:flex;align-items:center}
+#specs .grid{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6vw;align-items:end}
+#specs .grid>div{grid-column:2;grid-row:1}
+#specs dl{grid-column:2;grid-row:2;margin-right:80px}
+#specs .grid{grid-template-rows:auto auto;row-gap:44px}
+dl{border-top:1px solid var(--faint)}
+dl div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:24px;padding:15px 0 13px;border-bottom:1px solid var(--faint)}
+dt{color:#b9afa1}
+dd{font-family:'Bricolage Grotesque',serif;font-variation-settings:'wdth' 75;font-weight:400;font-size:clamp(24px,2.4vw,36px);letter-spacing:-.02em;line-height:1;text-align:right;font-variant-numeric:tabular-nums}
+dd small{font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:.14em;color:var(--mute);margin-left:6px}
+.cta{pointer-events:auto;display:inline-flex;align-items:baseline;gap:18px;margin-top:44px;color:var(--paper);text-decoration:none;font-family:'Bricolage Grotesque',serif;font-variation-settings:'wdth' 75;font-weight:300;font-size:clamp(34px,3.6vw,58px);letter-spacing:-.03em;line-height:1;border-bottom:1px solid var(--lamp);padding-bottom:10px}
+.cta span{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.17em;color:var(--lamp)}
+.cta:hover{color:var(--lamp)}
+footer{position:relative;z-index:3;padding:0 var(--gut) var(--gut);display:flex;justify-content:space-between;gap:20px;color:var(--mute);flex-wrap:wrap}
+
+/* hotspots */
+#hs{position:fixed;inset:0;z-index:4;pointer-events:none}
+#hs svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#hs .lab{position:absolute;left:0;top:0;white-space:nowrap;opacity:0;transition:opacity .5s}
+#hs .lab b{display:block;font-weight:500;color:var(--paper)}
+#hs .lab span{color:var(--mute)}
+#hs line{stroke:rgba(239,231,218,.55);stroke-width:1;transition:opacity .5s}
+#hs circle{fill:none;stroke:var(--lamp);stroke-width:1;transition:opacity .5s}
+#hs circle.c{fill:var(--lamp);stroke:none}
+
+/* loader */
+#ld{position:fixed;inset:0;z-index:9;background:var(--bg);display:grid;place-items:center;transition:opacity 1.1s ease .2s}
+#ld.out{opacity:0;pointer-events:none}
+#ld .bar{width:min(260px,60vw);height:1px;background:var(--faint);margin-top:14px;position:relative;overflow:hidden}
+#ld .bar i{position:absolute;inset:0;background:var(--lamp);transform-origin:left;transform:scaleX(0);transition:transform .4s}
+#err{display:none;max-width:44ch;text-align:center}
+
+@media (max-width:760px){
+  .rail{display:none}
+  header{padding:16px var(--gut)}
+  .brand .mono{display:none}
+  #hero .h{bottom:auto;top:13svh}
+  #hero .side{left:var(--gut);right:var(--gut);bottom:calc(var(--gut) + env(safe-area-inset-bottom));justify-items:start;text-align:left}
+  #hero .side p.body{text-align:left}
+  .readout{justify-content:start}
+  .blk{top:auto;bottom:calc(var(--gut) + 4svh);transform:none;max-width:none;right:var(--gut)}
+  .blk h2{margin-bottom:18px}
+  .blk .meta{margin-top:18px}
+  .blk .meta strong{font-size:34px}
+  .kv button{font-size:34px}
+  #specs .grid{grid-template-columns:1fr;gap:40px}
+  #specs .grid>div,#specs dl{grid-column:1;margin-right:0}
+  #specs{align-items:flex-end;padding-bottom:12svh}
+  p.body{font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<aside id="ld" aria-label="Loading" aria-live="polite"><div class="mono"><span id="ldt">Loading model</span> <span id="ldp" class="num">000</span><div class="bar"><i id="ldb"></i></div><p id="err" class="mono"></p></div></aside>
+
+<header>
+  <div class="brand"><b>LYNAR</b><span class="mono mute">SDI&nbsp;&nbsp;/&nbsp;&nbsp;L-Configuration</span></div>
+  <div class="ctl mono">
+    <button id="lightBtn" class="tog" aria-pressed="true">Light <i class="on" data-v="1">1</i><i data-v="0">0</i></button>
+    <span class="num"><span id="chNow" class="lamp">00</span><span class="mute">&thinsp;/&thinsp;09</span></span>
+  </div>
+</header>
+
+<nav class="rail mono" aria-label="Sections"></nav>
+
+<div id="hs" aria-hidden="true"><svg></svg></div>
+
+<main>
+<canvas id="gl" role="img" aria-label="Interactive 3D model of the LYNAR L configuration. Drag, or use the arrow keys, to rotate." tabindex="0"></canvas>
+  <section id="hero" data-ch="0" data-title="Overview">
+    <div class="h">
+      <span class="k mono"><span class="lamp">00</span>Surface profile · six luminaire families</span>
+      <h1 class="disp"><span class="ln"><span>Light that</span></span><span class="ln"><span>turns the</span></span><span class="ln"><span>corner.</span></span></h1>
+    </div>
+    <div class="side">
+      <p class="body">One profile run in an L. Pendants and spots hang from track adapters; linear modules sit inside the channel; an indirect diffuser washes the ceiling.</p>
+      <div class="readout mono"><span>Pitch</span><span id="rx" class="num">+000.0°</span><span>Yaw</span><span id="ry" class="num">+000.0°</span><span>Roll</span><span id="rz" class="num">+000.0°</span></div>
+      <div class="hint mono"><svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1"><circle cx="15" cy="15" r="13.5" stroke-opacity=".35"/><path d="M15 6v18M6 15h18" stroke-opacity=".9"/><path d="M12.5 8.5 15 6l2.5 2.5M12.5 21.5 15 24l2.5-2.5M8.5 12.5 6 15l2.5 2.5M21.5 12.5 24 15l-2.5 2.5"/></svg>Drag · rotate on any axis</div>
+    </div>
+  </section>
+
+  <section id="geo" data-ch="1" data-title="Geometry">
+    <div class="blk">
+      <span class="k mono"><span class="lamp">01</span>Geometry</span>
+      <h2 class="disp"><span class="ln"><span>Two runs.</span></span><span class="ln"><span>One right angle.</span></span></h2>
+      <p class="body">Three 1,000&nbsp;mm profile segments meet at a 90° corner element with an angular connector. End covers close both runs.</p>
+      <div class="meta"><div><span class="mono mute">Section</span><strong class="num">40×66<small>MM</small></strong></div><div><span class="mono mute">Footprint</span><strong class="num">2103×1075<small>MM</small></strong></div></div>
+    </div>
+  </section>
+
+  <div class="mods">
+    <section class="mod" data-ch="2" data-mod="biba" data-title="BIBA">
+      <div class="blk"><span class="k mono"><span class="lamp">02</span>Module 1 of 6 · Pendant</span>
+        <h2 class="disp"><span class="ln"><span>BIBA</span></span></h2>
+        <p class="body">A drop pendant on a track adapter, with a cable blocker to fix the height.</p>
+        <div class="meta"><div><span class="mono mute">Drop, as modelled</span><strong class="num">731<small>MM</small></strong></div><div><span class="mono mute">Shade Ø</span><strong class="num">75<small>MM</small></strong></div></div></div>
+    </section>
+    <section class="mod" data-ch="3" data-mod="kalis" data-title="KALIS-36">
+      <div class="blk"><span class="k mono"><span class="lamp">03</span>Module 2 of 6 · Linear multispot</span>
+        <h2 class="disp"><span class="ln"><span>KALIS-36</span></span></h2>
+        <p class="body">A multispot module built into the channel, flush with the profile face.</p>
+        <div class="meta"><div><span class="mono mute">Length</span><strong class="num">565<small>MM</small></strong></div><div><span class="mono mute">Width</span><strong class="num">36<small>MM</small></strong></div></div></div>
+    </section>
+    <section class="mod" data-ch="4" data-mod="atos" data-title="ATOS">
+      <div class="blk"><span class="k mono"><span class="lamp">04</span>Module 3 of 6 · Spot pair</span>
+        <h2 class="disp"><span class="ln"><span>ATOS</span></span></h2>
+        <p class="body">Two spot heads on one adapter bar, each on its own joint, behind a reflector and front cover.</p>
+        <div class="meta"><div><span class="mono mute">Heads</span><strong class="num">2</strong></div><div><span class="mono mute">Height</span><strong class="num">106<small>MM</small></strong></div></div></div>
+    </section>
+    <section class="mod" data-ch="5" data-mod="eye" data-title="EYE 60">
+      <div class="blk"><span class="k mono"><span class="lamp">05</span>Module 4 of 6 · Double angle</span>
+        <h2 class="disp"><span class="ln"><span>EYE 60</span></span></h2>
+        <p class="body">Two COB heads aimed at different angles from one bar. Each LED sits in a Ledil HEKLA holder inside a funnel.</p>
+        <div class="meta"><div><span class="mono mute">Heads</span><strong class="num">2</strong></div><div><span class="mono mute">Bar</span><strong class="num">178<small>MM</small></strong></div></div></div>
+    </section>
+    <section class="mod" data-ch="6" data-mod="rylo" data-title="RYLO">
+      <div class="blk"><span class="k mono"><span class="lamp">06</span>Module 5 of 6 · Light line</span>
+        <h2 class="disp"><span class="ln"><span>RYLO</span></span></h2>
+        <p class="body">A row of LED points built into the channel. It reads as a dotted line of light from below.</p>
+        <div class="meta"><div><span class="mono mute">LED points</span><strong class="num">16</strong></div><div><span class="mono mute">Length</span><strong class="num">566<small>MM</small></strong></div></div></div>
+    </section>
+    <section class="mod" data-ch="7" data-mod="indirect" data-title="Indirect">
+      <div class="blk"><span class="k mono"><span class="lamp">07</span>Module 6 of 6 · Up-light</span>
+        <h2 class="disp"><span class="ln"><span>Indirect</span></span></h2>
+        <p class="body">A diffuser on top of the profile throws light at the ceiling, so the room glows while the downlights do the detail work.</p>
+        <div class="meta"><div><span class="mono mute">Diffuser</span><strong class="num">640<small>MM</small></strong></div><div><span class="mono mute">Direction</span><strong>Up</strong></div></div></div>
+    </section>
+  </div>
+
+  <section id="kelvin" data-ch="8" data-title="Colour temperature">
+    <div class="blk">
+      <span class="k mono"><span class="lamp">08</span>Scene preview</span>
+      <h2 class="disp"><span class="ln"><span>Set the</span></span><span class="ln"><span>room’s warmth.</span></span></h2>
+      <p class="body">Every light in the scene follows one colour temperature. Try it.</p>
+      <div class="kv" role="group" aria-label="Colour temperature">
+        <button data-k="2700">2700<small>K</small></button><button data-k="3000" class="on">3000<small>K</small></button><button data-k="3500">3500<small>K</small></button><button data-k="4000">4000<small>K</small></button>
+      </div>
+      <p class="note mono mute">Visualisation only · not a product specification</p>
+    </div>
+  </section>
+
+  <section id="specs" data-ch="9" data-title="Specification">
+    <div class="grid">
+      <div>
+        <span class="k mono"><span class="lamp">09</span>As modelled</span>
+        <h2 class="disp"><span class="ln"><span>Built from</span></span><span class="ln"><span>the real CAD.</span></span></h2>
+        <a class="cta" href="#contact">Request photometrics <span>→</span></a>
+      </div>
+      <dl class="mono">
+        <div><dt>Footprint</dt><dd>2103 × 1075<small>MM</small></dd></div>
+        <div><dt>Profile section</dt><dd>40 × 66<small>MM</small></dd></div>
+        <div><dt>Profile segments</dt><dd>3 × 1000<small>MM</small></dd></div>
+        <div><dt>Corner</dt><dd>90°<small>Element + connector</small></dd></div>
+        <div><dt>Luminaire families</dt><dd>06</dd></div>
+        <div><dt>Pendant drop</dt><dd>731<small>MM</small></dd></div>
+        <div><dt>Photometrics · finishes</dt><dd>On request</dd></div>
+      </dl>
+    </div>
+  </section>
+</main>
+<footer class="mono"><span>Dimensions measured from the manufacturer CAD model</span><span class="num">3D · 231,193 triangles · 1.07 MB</span></footer>
+
+<script>window.LYNAR_GLB=null;</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+
+gsap.registerPlugin(ScrollTrigger);
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isMobile = () => innerWidth <= 760;
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+/* ---------- renderer ---------- */
+const canvas = $('#gl');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
+} catch (e) { fail('WebGL is not available on this device.'); throw e; }
+const LOW = matchMedia('(pointer: coarse)').matches || innerWidth <= 760;
+let DPR = Math.min(window.devicePixelRatio || 1, LOW ? 1.5 : 2);
+renderer.setPixelRatio(DPR);
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.info.autoReset = false;
+renderer.shadowMap.autoUpdate = false;
+const lastShadowQ = new THREE.Quaternion(1, 0, 0, 0);
+RectAreaLightUniformsLib.init();
+
+const scene = new THREE.Scene();
+const BG = new THREE.Color('#0b0a09');
+scene.background = BG;
+scene.fog = new THREE.FogExp2(BG, 0.075);
+
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 80);
+
+/* environment: lightformers, one key direction (upper-left), warm rim strip (back-right) */
+const pmrem = new THREE.PMREMGenerator(renderer);
+{
+  const s = new THREE.Scene(); s.background = new THREE.Color(0x020202);
+  const g = new THREE.PlaneGeometry(1, 1);
+  const add = (hex, k, p, sc) => { const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k), side: THREE.DoubleSide })); m.position.set(...p); m.scale.set(...sc); m.lookAt(0, 0, 0); s.add(m); };
+  add(0xdde6ff, 2.4, [-4.5, 5, 3], [5, 3.2, 1]);    // key softbox, cool, upper-left-front
+  add(0xffd2a4, 5.0, [4.2, 1.2, -3.6], [0.35, 6, 1]); // rim strip, warm, back-right
+  add(0xffffff, 0.7, [0, 6.5, 0], [7, 7, 1]);       // overhead
+  add(0x2a2420, 0.5, [0, -4, 0], [12, 12, 1]);      // floor bounce
+  scene.environment = pmrem.fromScene(s, 0.02).texture;
+  scene.environmentIntensity = 0.95;
+}
+
+/* cyclorama: floor curving into wall, no horizon line */
+const FLOOR_Y = -1.5, WALL_Z = -2.8;
+{
+  const R = 1.8, pts = [];
+  for (let z = 16; z > WALL_Z + R; z -= 0.4) pts.push([z, FLOOR_Y]);
+  for (let i = 0; i <= 20; i++) { const a = i / 20 * Math.PI / 2; pts.push([WALL_Z + R - Math.sin(a) * R, FLOOR_Y + R - Math.cos(a) * R]); }
+  for (let y = FLOOR_Y + R + 0.4; y <= FLOOR_Y + 16; y += 0.4) pts.push([WALL_Z, y]);
+  const XS = 48, W = 34, pos = [], idx = [];
+  for (const [z, y] of pts) for (let i = 0; i <= XS; i++) pos.push(-W / 2 + W * i / XS, y, z);
+  for (let j = 0; j < pts.length - 1; j++) for (let i = 0; i < XS; i++) { const a = j * (XS + 1) + i, b = a + 1, c = a + XS + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const cyc = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#4a443d', roughness: 0.9, metalness: 0, side: THREE.DoubleSide }));
+  cyc.receiveShadow = true; scene.add(cyc);
+}
+
+/* key light: cool moonlight from upper-left, the only shadow caster */
+const key = new THREE.DirectionalLight('#e6ebff', 1.25);
+key.position.set(-3.2, 5.2, 2.6);
+key.castShadow = true;
+key.shadow.mapSize.set(LOW ? 1024 : 2048, LOW ? 1024 : 2048);
+Object.assign(key.shadow.camera, { left: -2.6, right: 2.6, top: 2.6, bottom: -2.6, near: 1, far: 16 });
+key.shadow.bias = -0.0003; key.shadow.normalBias = 0.015;
+scene.add(key);
+
+/* ---------- post ---------- */
+const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: LOW && DPR >= 1.5 ? 0 : 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.setPixelRatio(DPR);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.5, 1.0);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAspect: { value: 1 }, uSide: { value: 0 }, uMob: { value: 0 } },
+  vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: `uniform sampler2D tDiffuse;uniform float uTime,uAspect,uSide,uMob;varying vec2 vUv;
+  float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+  void main(){vec4 c=texture2D(tDiffuse,vUv);vec2 d=(vUv-.5)*vec2(uAspect,1.);
+  float v=smoothstep(1.05,.28,length(d));c.rgb*=mix(.62,1.,v);
+  float sx=uSide<0.?1.-vUv.x:vUv.x;float side=mix(smoothstep(.5,0.,sx),smoothstep(.5,0.,vUv.y),uMob);c.rgb*=1.-abs(uSide)*.72*side*side*(3.-2.*side);
+  c.rgb+=(h(vUv*1024.+fract(uTime)*97.)-.5)*.022;gl_FragColor=c;}`
+});
+composer.addPass(finish);
+
+/* ---------- materials ---------- */
+const productInv = { value: new THREE.Matrix4() };
+const NOISE = `
+float h3(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
+return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}`;
+/* powder-coat grain: product-space noise perturbs roughness + normal, faded by screen-space frequency to avoid shimmer */
+function powder(mat, freq, amp) {
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uPInv = productInv;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform mat4 uPInv;varying vec3 vPP;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPP=(uPInv*modelMatrix*vec4(transformed,1.)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPP;' + NOISE)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        vec3 gp=vPP*${freq.toFixed(1)}; float gw=1.-smoothstep(.35,1.,length(fwidth(gp)));
+        float gn=vn(gp); roughnessFactor=clamp(roughnessFactor+(gn-.5)*${amp.toFixed(3)}*gw,.04,1.);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        normal=normalize(normal+(vec3(vn(gp+vec3(.37,0,0)),vn(gp+vec3(0,.53,0)),vn(gp+vec3(0,0,.71)))-.5)*${(amp * .45).toFixed(3)}*gw);`);
+  };
+  mat.customProgramCacheKey = () => 'powder' + freq + amp;
+  return mat;
+}
+const M = {
+  'White_WH1': powder(new THREE.MeshPhysicalMaterial({ color: '#eeebe5', roughness: 0.38, specularIntensity: 0.75 }), 1600, 0.34),
+  'Black-BK2': powder(new THREE.MeshPhysicalMaterial({ color: '#0e0e0f', roughness: 0.44, specularIntensity: 0.9 }), 1600, 0.38),
+  'Chrome': new THREE.MeshPhysicalMaterial({ color: '#f4f2ee', metalness: 1, roughness: 0.07 }),
+  'Difusor': new THREE.MeshPhysicalMaterial({ color: '#fbf6ee', roughness: 0.3, transmission: 0 }),
+  'White_WH1#1': new THREE.MeshStandardMaterial({ color: '#e8e2d6', roughness: 0.62 }),
+  'LED light': new THREE.MeshStandardMaterial({ color: '#141210', roughness: 0.4 }),
+  'Material #43': new THREE.MeshStandardMaterial({ color: '#3d3215', roughness: 0.5 }),
+  'Material #32': new THREE.MeshStandardMaterial({ color: '#d9d5cd', roughness: 0.55 }),
+  'Material #33': new THREE.MeshStandardMaterial({ color: '#1b1b1b', roughness: 0.6 }),
+  'Empty material': new THREE.MeshStandardMaterial({ color: '#1b1b1b', roughness: 0.6 }),
+};
+const EMIT = new Set(['Difusor', 'White_WH1#1', 'LED light', 'Material #43']);
+
+/* ---------- volumetric beam ---------- */
+const beamUniforms = { uTime: { value: 0 }, uFloor: { value: FLOOR_Y }, uWall: { value: WALL_Z } };
+function beamMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { ...beamUniforms, uColor: { value: new THREE.Color() }, uI: { value: 0 }, uLen: { value: 1 } },
+    vertexShader: `uniform float uLen;varying float vT;varying vec3 vN,vV,vW;
+      void main(){vT=clamp(-position.y/uLen,0.,1.);vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;
+      vN=normalize(mat3(modelMatrix)*normal);vV=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader: `uniform vec3 uColor;uniform float uI,uTime,uFloor,uWall;varying float vT;varying vec3 vN,vV,vW;${NOISE}
+      void main(){float f=abs(dot(normalize(vN),normalize(vV)));float edge=pow(f,2.2);
+      float along=smoothstep(0.,.14,vT)*pow(1.-vT,1.9);
+      float ground=smoothstep(uFloor,uFloor+.45,vW.y)*smoothstep(uWall,uWall+.45,vW.z);
+      float dust=.78+.22*vn(vW*7.+vec3(0.,uTime*.06,uTime*.03));
+      float a=edge*along*ground*dust*uI;gl_FragColor=vec4(uColor*a,1.);}`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false,
+  });
+}
+function addBeam(parent, pos, dir, angle, len) {
+  const r = Math.tan(angle) * len;
+  const geo = new THREE.CylinderGeometry(0.004, r, len, 48, 1, true); geo.translate(0, -len / 2, 0);
+  const mat = beamMaterial(); mat.uniforms.uLen.value = len;
+  const m = new THREE.Mesh(geo, mat);
+  m.position.copy(pos); m.quaternion.setFromUnitVectors(V(0, -1, 0), dir.clone().normalize());
+  m.renderOrder = 5; m.frustumCulled = false; parent.add(m);
+  return mat;
+}
+
+/* ---------- colour temperature ---------- */
+function kelvinColor(K) {
+  const t = K / 100, cl = v => Math.min(255, Math.max(0, v)) / 255;
+  let r, g, b;
+  if (t <= 66) { r = 255; g = 99.4708025861 * Math.log(t) - 161.1195681661; b = t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307; }
+  else { r = 329.698727446 * Math.pow(t - 60, -0.1332047592); g = 288.1221695283 * Math.pow(t - 60, -0.0755148492); b = 255; }
+  return new THREE.Color().setRGB(cl(r), cl(g), cl(b), THREE.SRGBColorSpace);
+}
+const lamp = { color: kelvinColor(3000), K: 3000 };
+
+/* ---------- product ---------- */
+const product = new THREE.Group(); scene.add(product);
+const rigs = {};
+const anchors = {};
+const qTarget = new THREE.Quaternion();
+let model;
+
+function centerOf(obj) { return new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3()); }
+function sizeOf(obj) { return new THREE.Box3().setFromObject(obj).getSize(new THREE.Vector3()); }
+const byName = n => model.getObjectByName(n);
+const findAll = (root, re) => { const out = []; root.traverse(o => { if (re.test(o.name)) out.push(o); }); return out; };
+const nearest = (p, list) => list.reduce((a, b) => (a.distanceTo(p) < b.distanceTo(p) ? a : b));
+
+function makeRig(key, rootName, cfg) {
+  const root = byName(rootName);
+  const rig = { key, level: 1, target: 1, lights: [], beams: [], mats: [], ...cfg };
+  root.traverse(o => {
+    if (o.isMesh && EMIT.has(o.userData.matName)) {
+      const m = o.material.clone(); m.emissive = new THREE.Color(); m.emissiveIntensity = 0; m.userData.base = cfg.glow[o.userData.matName] ?? 0;
+      o.material = m; rig.mats.push(m);
+    }
+  });
+  rigs[key] = rig; return rig;
+}
+
+function setupModel(gltf) {
+  model = gltf.scene;
+  model.updateMatrixWorld(true);
+  const c = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3());
+  model.position.sub(c);
+  product.add(model);
+  model.traverse(o => {
+    if (o.isLight) o.visible = false;
+    if (o.isMesh) {
+      const n = o.material.name; o.userData.matName = n;
+      o.material = M[n] || M['Black-BK2'];
+      o.castShadow = true; o.receiveShadow = false;
+    }
+  });
+  product.updateMatrixWorld(true);
+  const toP = v => product.worldToLocal(v.clone());
+  const down = V(0, -1, 0);
+
+  /* BIBA pendant: one downlight at the shade */
+  {
+    const r = makeRig('biba', 'Intra-lighting_LYNAR_BIBA-LYN001', { glow: { 'Difusor': 7, 'White_WH1#1': 3 } });
+    const p = toP(centerOf(byName('LED011'))).add(V(0, -0.004, 0));
+    const s = new THREE.SpotLight(0xffffff, 0, 0, 0.62, 0.75, 2); s.position.copy(p); s.target.position.copy(p.clone().add(down)); product.add(s, s.target);
+    r.lights.push({ l: s, base: 16 }); r.beams.push({ m: addBeam(product, p, down, 0.48, 1.6), base: 0.16 });
+  }
+  /* KALIS-36: linear multispot, built in */
+  {
+    const r = makeRig('kalis', 'Intra-lighting_LYNAR_KALIS-36_LinerMultispot_Rylo001', { glow: { 'Difusor': 2.4, 'White_WH1#1': 1 } });
+    const mir = byName('Mirror002'), p = toP(centerOf(mir)), sz = sizeOf(mir);
+    const a = new THREE.RectAreaLight(0xffffff, 0, sz.x, sz.z); a.position.copy(p).add(V(0, -0.006, 0)); a.rotation.set(-Math.PI / 2, 0, 0); product.add(a);
+    r.lights.push({ l: a, base: 40 });
+    for (let i = 0; i < 3; i++) { const q = p.clone().add(V(0, -0.004, (i / 2 - 0.5) * sz.z * 0.7)); r.beams.push({ m: addBeam(product, q, down, 0.36, 1.5), base: 0.035 }); }
+  }
+  /* ATOS: two adjustable heads; axis from LED to front cover */
+  {
+    const r = makeRig('atos', 'Sestav_Atos_LYN001', { glow: { 'Difusor': 7, 'White_WH1#1': 3 } });
+    const covers = findAll(byName('Sestav_Atos_LYN001'), /^Cover_Atos_CT/).map(o => toP(centerOf(o)));
+    for (const n of ['LED016', 'LED020']) {
+      const led = toP(centerOf(byName(n))), cov = nearest(led, covers), dir = cov.clone().sub(led).normalize();
+      const s = new THREE.SpotLight(0xffffff, 0, 0, 0.34, 0.6, 2); s.position.copy(cov); s.target.position.copy(cov.clone().add(dir)); product.add(s, s.target);
+      r.lights.push({ l: s, base: 26 }); r.beams.push({ m: addBeam(product, cov, dir, 0.24, 1.9), base: 0.13 });
+    }
+  }
+  /* EYE 60 double angle: COB to funnel axis */
+  {
+    const r = makeRig('eye', 'EYE_60_C_double_angle001', { glow: { 'Material #43': 9 } });
+    const funnels = findAll(byName('EYE_60_C_double_angle001'), /^Brooke_Funnel/).map(o => toP(centerOf(o)));
+    for (const n of ['Imported010', 'Imported011']) {
+      const led = toP(centerOf(byName(n))), fn = nearest(led, funnels), dir = fn.clone().sub(led).normalize();
+      const s = new THREE.SpotLight(0xffffff, 0, 0, 0.3, 0.55, 2); s.position.copy(fn); s.target.position.copy(fn.clone().add(dir)); product.add(s, s.target);
+      r.lights.push({ l: s, base: 26 }); r.beams.push({ m: addBeam(product, fn, dir, 0.2, 1.9), base: 0.13 });
+    }
+  }
+  /* RYLO: 16 LED points in a line */
+  {
+    const r = makeRig('rylo', 'Intra-lighting_LYNAR_RYLO-LightLineKalis001', { glow: { 'LED light': 14 } });
+    const leds = []; byName('Intra-lighting_LYNAR_RYLO-LightLineKalis001').traverse(o => { if (o.isMesh && o.userData.matName === 'LED light') leds.push(toP(centerOf(o))); });
+    const box = new THREE.Box3().setFromPoints(leds), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+    const a = new THREE.RectAreaLight(0xffffff, 0, 0.02, sz.z + 0.03); a.position.copy(c).add(V(0, -0.004, 0)); a.rotation.set(-Math.PI / 2, 0, 0); product.add(a);
+    r.lights.push({ l: a, base: 45 });
+    for (let i = 0; i < 3; i++) { const q = c.clone().add(V(0, -0.004, (i / 2 - 0.5) * sz.z * 0.7)); r.beams.push({ m: addBeam(product, q, down, 0.34, 1.4), base: 0.05 }); }
+    r.count = leds.length;
+  }
+  /* Indirect: diffuser on top, upward wash */
+  {
+    const r = makeRig('indirect', 'IntraLighting_Indirect_ilumination001', { glow: { 'Difusor': 4 } });
+    const d = byName('IntraLighting_Indirect_ilumination001'), p = toP(centerOf(d)), sz = sizeOf(d);
+    for (let i = 0; i < 3; i++) { const q = p.clone().add(V(0, 0.002, (i / 2 - 0.5) * sz.z * 0.7)); r.beams.push({ m: addBeam(product, q, V(0, 1, 0), 0.6, 0.6), base: 0.025 }); }
+  }
+
+  /* anchors for hotspots (product-local) */
+  const P = n => toP(centerOf(byName(n)));
+  anchors.corner = P('Intra-lighting_LYNAR-CS-SDI_Corner-element90_1');
+  anchors.end1 = P('Intra-lighting_LYNAR-CS-SDI_End_cover001');
+  anchors.end2 = P('Intra-lighting_LYNAR-CS-SDI_End_cover002');
+  anchors.section = P('Intra-lighting_LYNAR-SDI004').add(V(0, 0, 0.25));
+  anchors.biba = P('LED011');
+  anchors.kalis = P('Mirror002');
+  anchors.atos = P('Sestav_Atos_LYN001').add(V(0, -0.03, 0));
+  anchors.eye = P('EYE_60_C_double_angle001').add(V(0, -0.02, 0));
+  anchors.rylo = P('Intra-lighting_LYNAR_RYLO-LightLineKalis001');
+  anchors.indirect = P('IntraLighting_Indirect_ilumination001');
+  anchors.mods = {
+    biba: P('Intra-lighting_LYNAR_BIBA-LYN001'), kalis: anchors.kalis, atos: P('Sestav_Atos_LYN001'),
+    eye: P('EYE_60_C_double_angle001'), rylo: anchors.rylo, indirect: anchors.indirect,
+  };
+  applyKelvin(3000, true);
+  window.__merged = mergeByMaterial(model);
+}
+
+/* draw-call reduction: bake every mesh into one geometry per material (CAD parts -> ~20 draws) */
+function mergeByMaterial(root) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), mtx = new THREE.Matrix4();
+  const groups = new Map();
+  root.traverse(o => { if (o.isMesh) { if (!groups.has(o.material)) groups.set(o.material, []); groups.get(o.material).push(o); } });
+  const out = [];
+  for (const [mat, meshes] of groups) {
+    const geos = meshes.map(m => {
+      const src = m.geometry, pos = src.attributes.position, nor = src.attributes.normal, n = pos.count;
+      const P = new Float32Array(n * 3), N = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { P[i * 3] = pos.getX(i); P[i * 3 + 1] = pos.getY(i); P[i * 3 + 2] = pos.getZ(i); if (nor) { N[i * 3] = nor.getX(i); N[i * 3 + 1] = nor.getY(i); N[i * 3 + 2] = nor.getZ(i); } }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+      let idx = src.index ? Uint32Array.from(src.index.array) : Uint32Array.from({ length: n }, (_, i) => i);
+      mtx.multiplyMatrices(inv, m.matrixWorld);
+      if (mtx.determinant() < 0) for (let i = 0; i < idx.length; i += 3) { const t = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = t; }
+      g.setIndex(new THREE.BufferAttribute(idx, 1));
+      if (!nor) g.computeVertexNormals();
+      g.applyMatrix4(mtx);
+      return g;
+    });
+    const mg = mergeGeometries(geos, false); geos.forEach(g => g.dispose());
+    const mesh = new THREE.Mesh(mg, mat); mesh.castShadow = true; mesh.receiveShadow = false; mesh.userData.matName = mat.name;
+    out.push(mesh);
+  }
+  root.traverse(o => { if (o.isMesh) o.geometry.dispose(); });
+  root.clear(); out.forEach(m => root.add(m));
+  return out.length;
+}
+
+
+/* ---------- chapters (camera + light state) ---------- */
+let CH = [];
+function buildChapters() {
+  const m = anchors.mods;
+  const mob = isMobile();
+  // dir = direction from target to camera (product space at identity orientation)
+  CH = [
+    { t: V(0, -0.02, 0.02), dir: V(-0.58, 0.36, 0.73), dist: 4.6, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.14 : -0.04, solo: null },
+    { t: V(0.2, 0.25, -0.5), dir: V(-0.42, 0.62, 0.66), dist: 2.25, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.16 : 0, solo: null, hs: ['corner', 'end1', 'end2', 'section'] },
+    { t: m.biba.clone().add(V(0, -0.05, 0)), dir: V(-0.55, 0.05, 0.83), dist: 1.55, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.17 : 0, solo: 'biba', hs: ['biba'] },
+    { t: m.kalis.clone().add(V(0, 0, 0.12)), dir: V(0.7, -0.5, 0.5), dist: 1.5, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.17 : 0, solo: 'kalis', hs: ['kalis'] },
+    { t: m.atos.clone().add(V(0, -0.02, 0)), dir: V(0.15, -0.12, 0.98), dist: 0.75, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.17 : 0, solo: 'atos', hs: ['atos'] },
+    { t: m.eye.clone().add(V(0.02, -0.03, 0)), dir: V(0.78, -0.12, 0.62), dist: 0.55, fov: 30, sx: mob ? 0 : -0.24, sy: mob ? 0.17 : 0, solo: 'eye', hs: ['eye'] },
+    { t: m.rylo.clone(), dir: V(-0.7, -0.4, 0.6), dist: 1.3, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.17 : 0, solo: 'rylo', hs: ['rylo'] },
+    { t: m.indirect.clone(), dir: V(-0.66, 0.5, 0.56), dist: 1.6, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.17 : 0, solo: 'indirect', hs: ['indirect'] },
+    { t: V(0, -0.1, 0), dir: V(-0.66, 0.18, 0.73), dist: 4.1, fov: 30, sx: mob ? 0 : -0.2, sy: mob ? 0.12 : -0.02, solo: null },
+    { t: V(0, -0.15, 0), dir: V(0.6, 0.4, 0.69), dist: 5.0, fov: 30, sx: mob ? 0 : 0.25, sy: mob ? 0.2 : 0.02, solo: null },
+  ];
+  if (mob) CH.forEach((c, i) => { c.dist *= [1.55, 2.3, 1.6, 2.2, 2.4, 2.5, 2.2, 2.2, 1.6, 1.6][i]; c.sy = i === 0 ? -0.05 : i === 9 ? 0.22 : 0.24; });
+}
+const HS = {
+  corner: ['Corner element 90°', '+ angular connector'],
+  end1: ['End cover', 'run A'], end2: ['End cover', 'run B'],
+  section: ['Profile', '40 × 66 mm'],
+  biba: ['LED + diffuser', 'Ø 75 mm shade'], kalis: ['Multispot face', '565 mm'], atos: ['2 heads', 'on joints', -150, 110],
+  eye: ['COB + HEKLA holder', '×2 angles'], rylo: ['16 LED points', '566 mm'], indirect: ['Diffuser, facing up', '640 mm'],
+};
+const cam = { tx: 0, ty: 0, tz: 0, dx: -0.58, dy: 0.36, dz: 0.73, dist: 4.3, fov: 30, sx: 0, sy: 0 };
+let current = -1, master = 1;
+
+function go(i, instant) {
+  if (i === current || !CH.length) return;
+  current = i;
+  const c = CH[i], d = c.dir.clone().normalize();
+  const dur = instant || REDUCE ? 0 : 1.7;
+  gsap.to(finish.uniforms.uSide, { value: i === 0 ? 0.35 : i === 9 && !isMobile() ? -1 : 1, duration: dur, ease: 'power2.inOut', overwrite: true });
+  finish.uniforms.uMob.value = isMobile() ? 1 : 0;
+  gsap.to(cam, { tx: c.t.x, ty: c.t.y, tz: c.t.z, dx: d.x, dy: d.y, dz: d.z, dist: c.dist, fov: c.fov, sx: c.sx, sy: c.sy, duration: dur, ease: 'power3.inOut', overwrite: true });
+  // ease the product back to its reference orientation
+  const from = qTarget.clone(), p = { k: 0 };
+  returnTween?.kill();
+  returnTween = gsap.to(p, { k: 1, duration: dur * 1.05, ease: 'power3.inOut', overwrite: true, onUpdate: () => { if (!drag.active) qTarget.slerpQuaternions(from, IDQ, p.k); } });
+  spin.set(0, 0, 0);
+  for (const k in rigs) gsap.to(rigs[k], { target: c.solo ? (k === c.solo ? 1 : 0.04) : 1, duration: dur * 0.9, ease: 'power2.inOut', overwrite: true });
+  hsActive = c.hs || [];
+  $('#chNow').textContent = String(i).padStart(2, '0');
+  $$('.rail button').forEach((b, j) => b.classList.toggle('on', j === i));
+}
+const IDQ = new THREE.Quaternion();
+let returnTween = null;
+
+function applyKelvin(K, instant) {
+  const to = kelvinColor(K), from = lamp.color.clone(), p = { k: 0 };
+  lamp.K = K;
+  gsap.to(p, { k: 1, duration: instant ? 0 : 0.9, ease: 'power2.out', onUpdate: () => { lamp.color.copy(from).lerp(to, p.k); document.documentElement.style.setProperty('--lamp', '#' + lamp.color.clone().lerp(new THREE.Color(1, 1, 1), 0.08).getHexString(THREE.SRGBColorSpace)); } });
+}
+
+/* ---------- drag: free trackball rotation with inertia ---------- */
+const drag = { active: false, pending: false, x: 0, y: 0, t: 0, id: null };
+const spin = new THREE.Vector3(); // world-space angular velocity (rad/s)
+const tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3();
+function rotateBy(axisWorld, angle) { tmpQ.setFromAxisAngle(axisWorld, angle); qTarget.premultiply(tmpQ).normalize(); }
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  drag.id = e.pointerId; drag.x = e.clientX; drag.y = e.clientY; drag.t = performance.now();
+  returnTween?.kill();
+  if (e.pointerType === 'touch') { drag.pending = true; return; }
+  start(e);
+});
+function start(e) { drag.active = true; drag.pending = false; spin.set(0, 0, 0); canvas.setPointerCapture(e.pointerId); document.body.classList.add('grab'); }
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (drag.pending) { if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy) * 1.2) start(e); else if (Math.abs(dy) > 6) drag.pending = false; return; }
+  if (!drag.active) return;
+  const now = performance.now(), dt = Math.max(1, now - drag.t) / 1000;
+  drag.x = e.clientX; drag.y = e.clientY; drag.t = now;
+  const k = 4.2 / Math.min(innerWidth, innerHeight) * 1.6;
+  const ang = Math.hypot(dx, dy) * k; if (ang < 1e-5) return;
+  tmpV.set(dy, dx, 0).normalize().applyQuaternion(camera.quaternion);
+  rotateBy(tmpV, ang);
+  spin.lerp(tmpV.clone().multiplyScalar(Math.min(ang / dt, 14)), 0.55);
+});
+const end = e => { if (e.pointerId !== drag.id) return; drag.active = false; drag.pending = false; drag.id = null; document.body.classList.remove('grab'); if (performance.now() - drag.t > 90) spin.set(0, 0, 0); };
+canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+canvas.addEventListener('keydown', e => {
+  const a = 0.16, m = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[e.key];
+  if (!m) return; e.preventDefault(); rotateBy(V(m[0], m[1], 0).normalize().applyQuaternion(camera.quaternion), a);
+});
+
+/* ---------- hotspots ---------- */
+let hsActive = [];
+const svg = $('#hs svg'), hsEls = {};
+for (const k in HS) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.innerHTML = '<line/><circle r="7"/><circle class="c" r="2"/>';
+  svg.appendChild(g);
+  const lab = document.createElement('div'); lab.className = 'lab mono'; lab.innerHTML = `<b>${HS[k][0]}</b><span>${HS[k][1]}</span>`;
+  $('#hs').appendChild(lab);
+  hsEls[k] = { g, lab, line: g.querySelector('line'), c: g.querySelectorAll('circle'), o: 0 };
+}
+const proj = new THREE.Vector3();
+function updateHotspots(dt) {
+  const w = innerWidth, h = innerHeight;
+  for (const k in hsEls) {
+    const e = hsEls[k], on = hsActive.includes(k) && anchors[k];
+    e.o += ((on ? 1 : 0) - e.o) * Math.min(1, dt * 6);
+    if (e.o < 0.01) { e.g.style.opacity = 0; e.lab.style.opacity = 0; continue; }
+    proj.copy(anchors[k]); product.localToWorld(proj); proj.project(camera);
+    // projection is in view-offset space; convert to full screen pixels
+    const x = (proj.x * 0.5 + 0.5) * w, y = (-proj.y * 0.5 + 0.5) * h;
+    const behind = proj.z > 1 || x < 8 || x > w - 8 || y < 56 || y > h - 8;
+    const ox = HS[k][2], oy = HS[k][3]; const side = ox != null ? Math.sign(ox) : (x > w * 0.84 ? -1 : 1), lx = x + (ox ?? side * 70), ly = y + (oy ?? -54);
+    const ll = Math.hypot(lx - x, ly - y) || 1; e.line.setAttribute('x1', x + (lx - x) / ll * 8); e.line.setAttribute('y1', y + (ly - y) / ll * 8); e.line.setAttribute('x2', lx); e.line.setAttribute('y2', ly);
+    e.c.forEach(c => { c.setAttribute('cx', x); c.setAttribute('cy', y); });
+    const op = behind ? 0 : e.o;
+    e.g.style.opacity = op; e.lab.style.opacity = op;
+    const lw = e.lab.offsetWidth, m = 14;
+    let tx = side > 0 ? lx + 8 : lx - 8 - lw;
+    if (tx + lw > w - m) tx = Math.max(m, x - 78 - lw);
+    if (tx < m) tx = m;
+    e.lab.style.transform = `translate(${tx}px, ${Math.max(64, ly - 16)}px)`;
+    const ex = tx + lw < x ? tx + lw + 6 : tx - 6;
+    e.line.setAttribute('x2', ex); e.line.setAttribute('y2', Math.max(64, ly - 16) + 16);
+  }
+}
+
+/* ---------- resize ---------- */
+function resize() {
+  const w = innerWidth, h = canvas.clientHeight || innerHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  finish.uniforms.uAspect.value = w / h;
+  if (model) { const was = current; buildChapters(); current = -1; go(Math.max(0, was), true); }
+}
+addEventListener('resize', resize);
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock();
+const RX = $('#rx'), RY = $('#ry'), RZ = $('#rz');
+const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(), eul = new THREE.Euler();
+let frames = 0, acc = 0, tuned = false;
+function frame() {
+  const __t0 = performance.now();
+  renderer.info.reset();
+  const dt = Math.min(clock.getDelta(), 0.25), t = clock.elapsedTime;
+  window.__fc = (window.__fc || 0) + 1;
+  // inertia
+  if (!drag.active && spin.lengthSq() > 1e-6) { const a = spin.length() * dt; rotateBy(tmpV.copy(spin).normalize(), a); spin.multiplyScalar(Math.exp(-dt * 2.6)); }
+  product.quaternion.slerp(qTarget, 1 - Math.exp(-dt * (drag.active ? 22 : 9)));
+  product.updateMatrixWorld(true);
+  productInv.value.copy(product.matrixWorld).invert();
+
+  // camera
+  camTgt.set(cam.tx, cam.ty, cam.tz).applyQuaternion(product.quaternion);
+  camPos.set(cam.dx, cam.dy, cam.dz).normalize().multiplyScalar(cam.dist).add(camTgt);
+  camera.position.copy(camPos); camera.lookAt(camTgt);
+  if (camera.fov !== cam.fov) { camera.fov = cam.fov; }
+  const w = innerWidth, h = canvas.clientHeight || innerHeight;
+  camera.setViewOffset(w, h, cam.sx * w, cam.sy * h, w, h);
+
+  // lights
+  for (const k in rigs) {
+    const r = rigs[k]; r.level += (r.target - r.level) * Math.min(1, dt * 5);
+    const L = r.level * master;
+    r.lights.forEach(o => { o.l.color.copy(lamp.color); o.l.intensity = o.base * L; o.l.visible = L > 0.002; });
+    r.beams.forEach(o => { o.m.uniforms.uColor.value.copy(lamp.color); o.m.uniforms.uI.value = o.base * L; });
+    r.mats.forEach(m => { m.emissive.copy(lamp.color); m.emissiveIntensity = m.userData.base * L; });
+  }
+  beamUniforms.uTime.value = t;
+  finish.uniforms.uTime.value = t;
+
+  // readout
+  eul.setFromQuaternion(product.quaternion, 'YXZ');
+  const f = v => { const d = THREE.MathUtils.radToDeg(v); return (d < 0 ? '−' : '+') + Math.abs(d).toFixed(1).padStart(5, '0') + '°'; };
+  RX.textContent = f(eul.x); RY.textContent = f(eul.y); RZ.textContent = f(eul.z);
+
+  if (lastShadowQ.angleTo(product.quaternion) > 1e-4) { renderer.shadowMap.needsUpdate = true; lastShadowQ.copy(product.quaternion); }
+  composer.render(dt);
+  updateHotspots(dt);
+  window.__info = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+  const __ft = window.__ft || (window.__ft = []); __ft.push(performance.now() - __t0); if (__ft.length > 600) __ft.shift();
+
+  // adaptive quality: if the first ~2s run slow, lower resolution, then drop transmission
+  if (!tuned && t > 1.5) { frames++; acc += dt; if (frames >= 90) { tuned = true; const ms = acc / frames * 1000;
+    if (ms > 21) { DPR = Math.max(1, DPR * 0.7); renderer.setPixelRatio(DPR); composer.setPixelRatio(DPR); resize(); }
+    if (ms > 30) { bloom.enabled = false; key.shadow.mapSize.set(1024, 1024); key.shadow.map?.dispose(); key.shadow.map = null; renderer.shadowMap.needsUpdate = true; }
+    window.__perf = { ms, DPR }; } }
+}
+
+/* ---------- UI wiring ---------- */
+const lenis = new Lenis({ lerp: REDUCE ? 1 : 0.085, smoothWheel: !REDUCE });
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add(t => lenis.raf(t * 1000));
+gsap.ticker.lagSmoothing(0);
+
+const sections = $$('[data-ch]');
+const rail = $('.rail');
+sections.forEach((s, i) => {
+  const b = document.createElement('button'); b.innerHTML = `<span class="num">${String(i).padStart(2, '0')}</span>`; b.setAttribute('aria-label', s.dataset.title);
+  b.addEventListener('click', () => lenis.scrollTo(s, { offset: 0, duration: 1.6 })); rail.appendChild(b);
+});
+
+$('#lightBtn').addEventListener('click', () => {
+  const on = master < 0.5; gsap.to({ v: master }, { v: on ? 1 : 0, duration: 0.9, ease: 'power2.inOut', onUpdate() { master = this.targets()[0].v; } });
+  $('#lightBtn').setAttribute('aria-pressed', on); $$('#lightBtn i').forEach(i => i.classList.toggle('on', i.dataset.v === (on ? '1' : '0')));
+});
+$$('.kv button').forEach(b => b.addEventListener('click', () => { $$('.kv button').forEach(x => x.classList.toggle('on', x === b)); applyKelvin(+b.dataset.k); }));
+
+function wireScroll() {
+  sections.forEach((s, i) => {
+    ScrollTrigger.create({ trigger: s, start: 'top 55%', end: 'bottom 55%', onToggle: self => { if (self.isActive) go(i); } });
+    const lines = s.querySelectorAll('.ln>span');
+    if (lines.length && !REDUCE) gsap.from(lines, { yPercent: 108, duration: 1.15, ease: 'power4.out', stagger: 0.08, scrollTrigger: { trigger: s, start: 'top 62%', toggleActions: 'play none none reverse' } });
+  });
+}
+
+/* ---------- boot ---------- */
+function fail(msg) { $('#ldt').textContent = 'Unavailable'; $('#ldp').textContent = ''; const e = $('#err'); e.style.display = 'block'; e.textContent = msg; }
+function progress(p) { $('#ldp').textContent = String(Math.round(p * 100)).padStart(3, '0'); $('#ldb').style.transform = `scaleX(${p})`; }
+
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+async function onLoaded(gltf) {
+  performance.mark('model-parsed');
+  setupModel(gltf);
+  buildChapters();
+  resize();
+  go(0, true);
+  // compile + first frame before reveal
+  try { await renderer.compileAsync(scene, camera); } catch (e) { renderer.compile(scene, camera); }
+  renderer.setAnimationLoop(frame);
+  wireScroll();
+  progress(1);
+  requestAnimationFrame(() => requestAnimationFrame(() => { $('#ld').classList.add('out'); document.documentElement.dataset.ready = '1'; performance.mark('first-frame'); }));
+  window.__app = { lenis, go, rigs, cam, product, qTarget, applyKelvin, renderer, get current() { return current; } };
+}
+if (window.LYNAR_GLB) {
+  progress(0.4);
+  fetch('data:model/gltf-binary;base64,' + window.LYNAR_GLB).then(r => r.arrayBuffer())
+    .then(buf => { progress(0.7); loader.parse(buf, '', onLoaded, () => fail('The 3D model could not be decoded.')); })
+    .catch(() => fail('The 3D model could not be decoded.'));
+} else {
+  loader.load('lynar-l.glb', onLoaded, e => e.total && progress(e.loaded / e.total * 0.95), () => fail('The 3D model could not be loaded.'));
+}
+</script>
+</body>
+</html>

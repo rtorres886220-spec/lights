@@ -1,0 +1,18 @@
+WEIGHT raw 2440644 gzip 1028245 brotli 892787
+
+=== CPU throttle 1x ===
+LOAD ms {"domContentLoaded":224,"fcp":96,"modelParsed":932,"firstFrame":5747}
+SCENE {"calls":66,"triangles":442226,"lights":8,"programs":25,"geometries":64,"textures":18,"heapMB":48.6,"longtasksDuringLoad":[110,662,118,74,4624,1635,1841,1631]}
+IDLE  JS frame cost ms {"n":4,"p50":2.3,"p95":3.9,"max":3.9}  rAF interval ms (software GPU) {"n":4,"p50":1633.3,"p95":1783.3,"max":1783.3}
+SCROLL+DRAG JS frame cost ms {"n":52,"p50":1.4,"p95":2.5,"max":3.5}  rAF interval ms (software GPU) {"n":52,"p50":1633.2,"p95":1749.9,"max":1816.5}
+long tasks during scroll+drag [1626,1636,1465,1599,1648,1709,1301,1724,1782,1553,1564,1500,1706,1816,1610,1682,1633,1670,1673,1636,1588,1672,1549,1612,1699,1651,1707,1624,1724,1612,1588,1614,1570,1610,1750,1587,1599,1629,1629,1591,1673,1632,1667,1423,1632,1700,1602,1592,1574,1521,1652] CLS 0.0022 heapMB 42.6 adaptive null
+errors none
+AXE violations none
+
+=== CPU throttle 4x ===
+LOAD ms {"domContentLoaded":2226,"fcp":2916,"modelParsed":3131,"firstFrame":8204}
+SCENE {"calls":66,"triangles":442226,"lights":8,"programs":25,"geometries":64,"textures":18,"heapMB":45.4,"longtasksDuringLoad":[64,167,1739,645,545,4523,2044,2358,2015]}
+IDLE  JS frame cost ms {"n":3,"p50":9.2,"p95":10.2,"max":10.2}  rAF interval ms (software GPU) {"n":3,"p50":2000,"p95":2066.6,"max":2066.6}
+SCROLL+DRAG JS frame cost ms {"n":49,"p50":6.2,"p95":12.1,"max":13.8}  rAF interval ms (software GPU) {"n":49,"p50":1966.6,"p95":2066.6,"max":2116.6}
+long tasks during scroll+drag [1950,2011,2011,1869,1958,1852,1511,2004,2048,1653,1785,1977,1966,1952,1946,1927,1981,2015,1942,1950,1981,1988,1986,1912,1915,1982,2012,1864,1953,2021,1969,1919,1930,1987,1946,1999,2116,2090,1876,1995,1969,1919,1918,1992,1975,1974,2022,2047,2070,1924] CLS 0.001 heapMB 22.1 adaptive null
+errors none
