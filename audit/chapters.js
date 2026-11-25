@@ -9,7 +9,7 @@ await pg.goto(`http://localhost:${srv.address().port}/?${process.argv[4]||""}`);
 await pg.waitForFunction(()=>document.documentElement.dataset.ready==='1',null,{timeout:300000});
 const wf=async n=>{const s=await pg.evaluate(()=>window.__fc);await pg.waitForFunction(t=>window.__fc>=t,s+n,{timeout:300000});};
 const n=await pg.evaluate(()=>document.querySelectorAll('[data-ch]').length);
-for(let i=0;i<n;i++){await pg.evaluate(i=>window.__app.lenis.scrollTo(document.querySelectorAll('[data-ch]')[i],{immediate:true,force:true}),i);
+const only=(process.env.CH||"").split(",").filter(Boolean).map(Number);for(let i=0;i<n;i++){if(only.length&&!only.includes(i))continue;await pg.evaluate(i=>window.__app.lenis.scrollTo(document.querySelectorAll('[data-ch]')[i],{immediate:true,force:true}),i);
  await pg.waitForTimeout(2800);await wf(10);await pg.screenshot({path:`${OUT}/ch${String(i).padStart(2,'0')}.png`});}
 console.log(JSON.stringify({info:await pg.evaluate(()=>window.__info),perf:await pg.evaluate(()=>window.__perf),errors:errs.slice(0,20)}));
 await b.close();srv.close()})();

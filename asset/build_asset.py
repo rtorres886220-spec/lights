@@ -407,12 +407,32 @@ for o in meshes():
         d = min(discs, key=lambda d: (center(d) - center(o)).length)
         ax = (d.matrix_world.to_3x3() @ d.data.polygons[0].normal).normalized()
         refl_axes[o.name] = (ax, center(o))
+SMART0 = []
 for o in meshes():
     m = o.data
     if o.name.startswith('VIS_') or o.name == 'Mesh_30':   # built with their own UV0 (radial / across-width)
         continue
     if o.name in refl_axes: cyl_uv(o, *refl_axes[o.name])
-    else: box_uv(o)
+    elif o.name in ('mesh_36', 'mesh_34', 'mesh_33', 'mesh_39'): box_uv(o)   # swept profile: flat faces, box is exact
+    else: ensure_uv(m, 'tile'); SMART0.append(o)                         # curved CAD: unwrap, no stretching
+# curved CAD parts: smart-unwrap 'tile', then scale each mesh so 1 UV unit = TILE metres (true world scale)
+smart_uniq = list({o.data.name: o for o in SMART0}.values())
+if smart_uniq:
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in smart_uniq: o.select_set(True); o.data.uv_layers.active = o.data.uv_layers['tile']
+    bpy.context.view_layer.objects.active = smart_uniq[0]
+    bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project(angle_limit=radians(50), island_margin=0.0, area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for o in smart_uniq:
+        m = o.data; uv = m.uv_layers['tile'].data; a3 = auv = 0.0
+        for p in m.polygons:
+            a3 += p.area
+            pts = [uv[li].uv for li in p.loop_indices]
+            auv += abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y for i in range(len(pts)))) / 2
+        k = math.sqrt(a3 / auv) / TILE if auv > 0 else 1
+        for d in uv: d.uv = d.uv * k
+REPORT['uv0_smart_meshes'] = len(smart_uniq)
 # order: 'tile' must be UV index 0 (TEXCOORD_0), 'bake' index 1
 for m in {o.data for o in meshes()}:
     for l in [l for l in m.uv_layers if l.name not in ('tile',)]: m.uv_layers.remove(l)

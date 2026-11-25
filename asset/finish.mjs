@@ -26,8 +26,8 @@ const ORM = tex('orm.webp'), PEEL = tex('orange_peel_n.webp'), FACET = tex('face
 const lin = hex => { const c = parseInt(hex.slice(1), 16); return [16, 8, 0].map(s => { const v = ((c >> s) & 255) / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); };
 // [base sRGB hex, options]; roughness/metalness come from the ORM atlas (factors 1)
 const SPEC = {
-  powder_white:   ['#F1F0EA', { peel: 0.22, clearcoat: [0.30, 0.25] }],
-  powder_black:   ['#1C1C1C', { peel: 0.22, clearcoat: [0.15, 0.35] }],
+  powder_white:   ['#F1F0EA', { peel: 0.10, clearcoat: [0.30, 0.25] }],
+  powder_black:   ['#1C1C1C', { peel: 0.06, clearcoat: [0.35, 0.3] }],
   baffle_black:   ['#121212', {}],
   alu_reflector:  ['#E8EAEC', { facet: 1.0, aniso: 0.6 }],
   chrome:         ['#F2F2F2', {}],
